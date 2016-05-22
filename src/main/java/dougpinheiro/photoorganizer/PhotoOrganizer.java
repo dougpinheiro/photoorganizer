@@ -1,4 +1,4 @@
-package dougpinheiro.fotoorganizer;
+package dougpinheiro.photoorganizer;
 
 import java.io.File;
 import java.io.FileFilter;

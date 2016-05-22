@@ -22,7 +22,7 @@
 					<finalName>photoorganizer</finalName>
 					<archive>
 						<manifest>
-							<mainClass>dougpinheiro.fotoorganizer.PhotoOrganizer</mainClass>
+							<mainClass>dougpinheiro.photoorganizer.PhotoOrganizer</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>
