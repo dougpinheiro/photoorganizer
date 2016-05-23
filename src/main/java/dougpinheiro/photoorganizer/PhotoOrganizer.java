@@ -63,7 +63,7 @@ public class PhotoOrganizer {
 
 		System.out.println(this.totalBytes);
 		
-		excludeDuplicate(this.targetFile);
+		excludeDuplicate(this.rootDirectory);
 		
 		System.exit(0);
 	}
@@ -101,7 +101,7 @@ public class PhotoOrganizer {
 
 			public void stateChanged(ChangeEvent e) {
 				if (progressBar.getValue() == 100){
-					mainFrame.hide();
+					//mainFrame.hide();
 				}				
 			}
 		});
@@ -139,7 +139,7 @@ public class PhotoOrganizer {
 						fos.flush();
 						fos.close();
 					}else{
-						updateProgressBar(Files.size(f.toPath()));
+						//updateProgressBar(Files.size(f.toPath()));
 						byte[] fTemp = Files.readAllBytes(fileTemp.toPath());
 						byte[] fTemp2 = Files.readAllBytes(f.toPath());
 						if (Arrays.equals(fTemp,fTemp2)){
@@ -234,6 +234,7 @@ public class PhotoOrganizer {
 
 	public static void main(String[] args) {
 		PhotoOrganizer fo = new PhotoOrganizer();
+		fo.start();
 		fo.showDuplicates();
 	}
 
