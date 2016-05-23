@@ -34,6 +34,7 @@ public class PhotoOrganizer {
 	private SimpleDateFormat sdf;
 	private FileFilter ff;
 	private long totalBytes = 0;
+	private int totalFiles = 0;
 	private long progress = 0;
 	private JFrame mainFrame;
 	private JProgressBar progressBar;
@@ -42,7 +43,9 @@ public class PhotoOrganizer {
 	public void start(){
 		setDefaultDirectories();
 		startGUI();
+		
 		calcBytesToProcess(this.sourceFile);
+		System.out.println("->"+this.totalBytes);
 
 		if(this.totalBytes > this.rootDirectory.getFreeSpace()){
 			JOptionPane.showMessageDialog(this.mainFrame, "The storage is full!");
@@ -50,18 +53,18 @@ public class PhotoOrganizer {
 		}
 
 		/*Set file filter*/
-		ff = new FileFilter() {
+		/*ff = new FileFilter() {
 			public boolean accept(File file) {
 				if(file.isDirectory() || file.getName().toUpperCase().endsWith(".JPG")){
 					return true;
 				}
 				return false;
 			}
-		};
+		};*/
 
 		createPhotoTree(this.sourceFile);
-
-		System.out.println(this.totalBytes);
+		
+		calcFilesToProcess(this.rootDirectory);
 		
 		excludeDuplicate(this.rootDirectory);
 		
@@ -71,15 +74,16 @@ public class PhotoOrganizer {
 	public long calcBytesToProcess(File directory){
 		File[] files = directory.listFiles();
 		long tmpLong = 0;
-		try {
+		/*try {
 			tmpLong = Files.size(directory.toPath());
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		}*/
 		for (File f : files) {
 			if(!f.isDirectory()){
 				try {
-					this.totalBytes+=Files.size(f.toPath());
+					tmpLong = Files.size(f.toPath());
+					this.totalBytes+=tmpLong;
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -88,6 +92,20 @@ public class PhotoOrganizer {
 			}
 		}
 		return tmpLong;
+	}
+	
+	public int calcFilesToProcess(File directory){
+		File[] files = directory.listFiles();
+		int tmpInt = 1;
+
+		for (File f : files) {
+			if(!f.isDirectory()){
+					this.totalFiles++;
+			}else{
+				this.totalFiles+=calcFilesToProcess(f);
+			}
+		}
+		return tmpInt;
 	}
 
 	public void startGUI(){
@@ -101,7 +119,8 @@ public class PhotoOrganizer {
 
 			public void stateChanged(ChangeEvent e) {
 				if (progressBar.getValue() == 100){
-					//mainFrame.hide();
+					progressBar.setValue(0);
+					progress = 0;
 				}				
 			}
 		});
@@ -139,10 +158,10 @@ public class PhotoOrganizer {
 						fos.flush();
 						fos.close();
 					}else{
-						//updateProgressBar(Files.size(f.toPath()));
 						byte[] fTemp = Files.readAllBytes(fileTemp.toPath());
 						byte[] fTemp2 = Files.readAllBytes(f.toPath());
 						if (Arrays.equals(fTemp,fTemp2)){
+							updateProgressBar(Files.size(f.toPath()));
 							continue;
 						}else{
 							FileOutputStream fos = new FileOutputStream(fileTemp);
@@ -166,6 +185,14 @@ public class PhotoOrganizer {
 		double tmpLong = (this.progress * 100)/this.totalBytes;
 		System.out.println(tmpLong);
 		this.progressBar.setValue((int)Math.round(tmpLong));
+	}
+	
+	public void updateProgressBar(){
+		System.out.println("Updating...");
+		this.progress++;
+		double tmpInt = (this.progress * 100)/this.totalFiles;
+		System.out.println(tmpInt);
+		this.progressBar.setValue(Integer.valueOf(String.valueOf(Math.round(tmpInt))));
 	}
 
 	public void setDefaultDirectories() {
@@ -205,6 +232,7 @@ public class PhotoOrganizer {
 			}			
 		}else{
 			try {
+				updateProgressBar();
 				md = MessageDigest.getInstance("MD5");
 				String id = new String(Base64.getEncoder().encode(md.digest(Files.readAllBytes(in.toPath()))));
 				System.out.println(in.getAbsolutePath()+" \t -"+id);
@@ -316,6 +344,14 @@ public class PhotoOrganizer {
 
 	public void setDuplicate(Map<String, String> duplicate) {
 		this.duplicate = duplicate;
+	}
+
+	public int getTotalFiles() {
+		return totalFiles;
+	}
+
+	public void setTotalFiles(int totalFiles) {
+		this.totalFiles = totalFiles;
 	}
 
 }
