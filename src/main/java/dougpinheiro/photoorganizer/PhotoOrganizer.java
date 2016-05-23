@@ -64,7 +64,29 @@ public class PhotoOrganizer {
 
 		createPhotoTree(this.sourceFile);
 		
+		System.out.println("Calculating files to process...");
+		
+		try {
+			Thread.sleep(10000L);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
 		calcFilesToProcess(this.rootDirectory);
+		
+		try {
+			Thread.sleep(10000L);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		System.out.println("Total of files to process: "+this.totalFiles+" files.");
+		
+		try {
+			Thread.sleep(10000L);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		
 		excludeDuplicate(this.rootDirectory);
 		
@@ -119,7 +141,7 @@ public class PhotoOrganizer {
 
 			public void stateChanged(ChangeEvent e) {
 				if (progressBar.getValue() == 100){
-					progressBar.setValue(0);
+					//progressBar.setValue(0);
 					progress = 0;
 				}				
 			}
