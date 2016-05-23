@@ -6,10 +6,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -31,12 +37,13 @@ public class PhotoOrganizer {
 	private long progress = 0;
 	private JFrame mainFrame;
 	private JProgressBar progressBar;
+	private Map<String, String> duplicate = new HashMap<String, String>();
 
 	public void start(){
 		setDefaultDirectories();
 		startGUI();
 		calcBytesToProcess(this.sourceFile);
-		
+
 		if(this.totalBytes > this.rootDirectory.getFreeSpace()){
 			JOptionPane.showMessageDialog(this.mainFrame, "The storage is full!");
 			System.exit(0);
@@ -53,8 +60,11 @@ public class PhotoOrganizer {
 		};
 
 		createPhotoTree(this.sourceFile);
-		
+
 		System.out.println(this.totalBytes);
+		
+		excludeDuplicate(this.targetFile);
+		
 		System.exit(0);
 	}
 
@@ -79,7 +89,7 @@ public class PhotoOrganizer {
 		}
 		return tmpLong;
 	}
-	
+
 	public void startGUI(){
 		this.mainFrame = new JFrame("Copying files...");
 		this.mainFrame.setAlwaysOnTop(true);
@@ -88,7 +98,7 @@ public class PhotoOrganizer {
 		this.mainFrame.add(this.progressBar);
 		this.progressBar.setVisible(true);
 		this.progressBar.addChangeListener(new ChangeListener() {
-			
+
 			public void stateChanged(ChangeEvent e) {
 				if (progressBar.getValue() == 100){
 					mainFrame.hide();
@@ -100,7 +110,7 @@ public class PhotoOrganizer {
 	}
 	public void createPhotoTree(File directory){
 		File[] arquivos = directory.listFiles();
-		
+
 		for (File f : arquivos) {
 			if(!f.isDirectory()){
 				BasicFileAttributes bfa = null;
@@ -116,15 +126,15 @@ public class PhotoOrganizer {
 							File.separator+createdDate.get(Calendar.YEAR)+
 							File.separator+(createdDate.get(Calendar.MONTH)+1)+
 							File.separator+f.getName());
-					
+
 					if(!directoryTemp.exists()){
 						directoryTemp.mkdirs();
 					}
-					
+
 					if(!fileTemp.exists()){
 						fileTemp.setLastModified(createdDate.getTimeInMillis());
 						FileOutputStream fos = new FileOutputStream(fileTemp);
-						
+
 						updateProgressBar(Files.copy(f.toPath(), fos));
 						fos.flush();
 						fos.close();
@@ -149,7 +159,7 @@ public class PhotoOrganizer {
 			}
 		}
 	}
-	
+
 	public void updateProgressBar(long value){
 		System.out.println("Updating...");
 		this.progress+=value;
@@ -187,9 +197,44 @@ public class PhotoOrganizer {
 		this.rootDirectory.mkdir();
 	}
 
+	public void excludeDuplicate(File in){
+		MessageDigest md;
+		if(in.isDirectory()){
+			for (File f : in.listFiles()) {
+				excludeDuplicate(f);
+			}			
+		}else{
+			try {
+				md = MessageDigest.getInstance("MD5");
+				String id = new String(Base64.getEncoder().encode(md.digest(Files.readAllBytes(in.toPath()))));
+				System.out.println(in.getAbsolutePath()+" \t -"+id);
+				if(this.duplicate.containsKey(id)){
+					this.duplicate.replace(id, this.duplicate.get(id)+"->"+in.toPath().toString());
+					in.delete();
+				}else{
+					this.duplicate.put(id, in.toPath().toString());					
+				}
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+	}
+	
+	public void showDuplicates(){
+		for (Iterator<String> key = this.duplicate.keySet().iterator(); key.hasNext();) {
+			String k = String.valueOf(key.next());
+			if(this.duplicate.get(k).contains("->")){
+				System.out.println(k+" \t ->"+this.duplicate.get(k));
+			}
+		}		
+	}
+
 	public static void main(String[] args) {
 		PhotoOrganizer fo = new PhotoOrganizer();
-		fo.start();
+		fo.showDuplicates();
 	}
 
 	public String getSource() {
@@ -262,6 +307,14 @@ public class PhotoOrganizer {
 
 	public void setProgress(long progress) {
 		this.progress = progress;
+	}
+
+	public Map<String, String> getDuplicate() {
+		return duplicate;
+	}
+
+	public void setDuplicate(Map<String, String> duplicate) {
+		this.duplicate = duplicate;
 	}
 
 }
